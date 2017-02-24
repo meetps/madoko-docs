@@ -1,0 +1,167 @@
+Title         : CS 749 Midsem  
+Author        : Meet Pragnesh Shah | 13D070003  
+
+[TITLE]
+
+# Q1
+
+## a) 
+
+## b)
+
+# Q2 
+
+## a)
+
+### Decompose into Triangles
+ 
+    Here we are given a set of points that may belong to
+    any n-gon , which may not be regular or identical. It
+    is thus safe to assume that the points are distributed
+    randomly in the 2D space. In order to get a continuous,
+    piecewise-linear isocontour of such a surface, we need
+    to perform decompose the points into shapes or polygons 
+    for which we already know the marching algorithm rules.
+    
+    
+    We can achieve this using **Delaunay triangulation** [1],
+    which takes in a set of points on a 2D plane and triangulates
+    them into triangles avoiding silver triangles (triangles with 
+    two extremely acute angles). Delaunay triangulation for a set
+    P of points in a plane is a triangulation DT(P) such that no
+    point in P is inside the circumcircle of any triangle in DT(P).
+    
+### Marching Triangles
+
+    Once the triangulation has been achieved, the entire 2D space
+    is decomposed into densely connected non-silver triangles, we
+    can very easily apply the analog of marching squares algorithm
+    for triangles. The cases (symmetry-removed) are as shown below:
+
+
+### Algorithm 
+
+* For a set of Points P obtain the Delaunay triangulation DT(P).
+* Perform Marching Triangles on the obtained triangulation decomposition DT(P).     
+
+## b) 
+
+### Marching Hexagons
+
+
+![64_hex]
+
+[64_hex]: images/64_hex.png "64_hex" { width:auto; max-width:90% }
+
+Code used to generate this plot is in the references section below.
+
+Symmetry removal, After removal of symmetry there are only 11 configurations left.
+The **ambiguous cases are bolded**
+
+Type 1 - 1,2,3,4,5,6
+
+Type 2 - 7,11,12,16,19,21
+
+**Type 3** - 8,13,10,15,17,20
+
+**Type 4** - 9,14,18
+
+Type 5 - 59,58,57,60,61,62
+
+Type 6 - 56,52,51,47,44,42
+
+**Type 7** - 55,50,53,48,46,43
+
+**Type 8** - 54,49,45
+
+Type 9 - 41,32,38,25,31,22
+
+**Type 10** - 40,33,34,35,37,39,24,26,28,29,30,23,
+
+**Type 11** - 36,27
+
+The line segments are shown in the below diagram and
+the **ambiguous cases are circled**
+
+![cases_small]
+
+[cases_small]: images/cases_small.jpg "cases_small" { width:auto; max-width:90% }
+
+
+# Q3
+
+``` javascript
+void findEdges(Mesh const & m, set<Edge> & edges)
+{
+     // Iterate over all faces
+     for(int i=0; i< m.faces.length(); i++)
+     {
+       // Iterate over all vertices of the face
+       for(int j=0; j < face[i].length(); i++)
+       {
+         // Get indices of adjacent vertices
+         int indexA = face[i][j];
+         int indexB = face[i][(j+1)%face[i].length()];
+         
+         // Form edges bothways (a->b and b->a)
+         Edge e1 = Edge(indexA, indexB);
+         Edge e2 = Edge(indexB, indexA);
+         
+         /* Check which is the smaller edge (vertice 
+            index wise) as mentioned in the struct 
+            code given and always push the smaller 
+            edge. set.push_back / insert guarantees
+            that duplicates are handled. 
+         */ 
+         if e1 < e2 ? edges.push_back(e1) : edges.push_back(e2);
+       } 
+     }
+}
+```
+
+# References
+
+[1] : https://en.wikipedia.org/wiki/Delaunay_triangulation
+
+
+```python
+import matplotlib.pyplot as plt
+import numpy as np
+
+from matplotlib.lines import Line2D                        
+
+sideLen = 16.0
+circleRadius = 1.8
+
+get_bin = lambda x, n: format(x, 'b').zfill(n)
+sort_by_ones = sorted(range(64),key=lambda x:-sum(int(d)for d in bin(x)[2:]))
+
+x_hex, y_hex = [], []
+for i in range(6): 
+   x_hex.append(sideLen * np.cos(2*np.pi*(i+1)/6.0))
+   y_hex.append(sideLen * np.sin(2*np.pi*(i+1)/6.0))
+
+fig, ax = plt.subplots()
+
+def drawHexagon(x,y,encoding):
+    for i in range(6):
+	if encoding[i] == '0':
+            c = plt.Circle((x+x_hex[i], y+y_hex[i]), circleRadius, color='r')
+        else:
+            c = plt.Circle((x+x_hex[i], y+y_hex[i]), circleRadius, color='g') 
+        ax.add_artist(c)
+        ax.add_line(Line2D((x+x_hex[i],x+x_hex[(i+1)%6]),(y+y_hex[i],y+y_hex[(i+1)%6]),linewidth=0.2))
+
+for i in range(8):
+    for j in range(8):
+        encoding = get_bin(sort_by_ones[i*8 + j],6)
+        if True:
+            x_c, y_c = 3 * (j+1) * sideLen, 3 * (i+1) * sideLen
+            drawHexagon(x_c, y_c, encoding)
+    	    plt.text(x_c-sideLen/2.5, y_c-sideLen/2.5, str(i*8+j))
+
+plt.xlim(0,420)
+plt.ylim(0,420)   
+plt.show()
+
+```
