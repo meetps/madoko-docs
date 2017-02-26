@@ -7,7 +7,57 @@ Author        : Meet Pragnesh Shah | 13D070003
 
 ## a) 
 
+      We are given a single point cloud with around 1 trillion 
+      points ( with normals ) covering around 100 km2. We have 
+      to convert it to a polygen mesh. We can safely assume that
+      the data is fairly noisy. Vanilla Poisson Reconstruction
+      however infeasible, would work well in such a situation
+      where we have noise and prevent artifacts.
+
+      Some problems with Vanilla Poisson Recontruction for this
+      specific problem are : 
+
+* Computational Complexity - Computing the least squares approx. 
+  for such a huge matrix would involve several huge matrix 
+  inversions which have high time complexities. Also since we are
+  taking the LIDAR data of a city, the data would be pretty sparse,
+  hence inversion of matrices this sparse may or may not exist. 
+
+* Memory Contraints - Storing 1 trillion points and associated normals
+  and other associated variables needed for the Vanilla Poisson Reconstruction
+  is virtually impossible with contemporary memory available on machines.
+
 ## b)
+
+Since we cannot process all the points at once and points that
+are very far away from each other do not have any influence on 
+their individual reconstruction process. Thus having a distributed
+peicewise reconstruction algorithm seems to be an appropriate choice.
+
+Key steps : (Details in [2])
+
+* Data Partition: Segment the point clouds into local subsets as suggested in [2].
+
+* Construct Set Oct-Tree: Read each subset `S` and for each point `p` in `S`,
+  refine the octree `OT` such that all points at depth `D`, `OT[d]` and its one-dist negihbours
+  are in the `OT[i]`.
+
+* Compute Divergence: For each point in the `S` compute the density and then find the
+  sample boundaries. Based on this boundaries compute the `+d` and `-d_` depths. Split
+  the sample normal into one-dist neighours `OT[+d]` and `OT[-d_]`. After the tree is
+  traversal is complete, take a node `n` of the tree, we only have access to depths 
+  `d' < d`, thus we distribute the divergence to all p' belonging to such depths. 
+  Side by side also accumulate the divergence at all such points to even out the 
+  computed divergence.
+
+* Poisson Reconstruction and Isosurface Extraction:
+  We take each depth point d and perform the streaming path. We update the `OT`
+  for `d' <= d` and then solve the system. Iterate over the leaf nodes, compute 
+  the X from 8 adjacent cell covers for crossing along edges and extract the 
+  mesh triangulation.
+
+
+
 
 # Q2 
 
